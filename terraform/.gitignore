@@ -1,0 +1,15 @@
+# ignore cloud provider credentials
+credentials.json
+
+# ignore terraform directory
+.terraform
+*tfstate
+*tfstate.backup
+.terraform.lock.hcl
+
+# ignore personal ssh credentials file
+user.auto.tfvars
+
+*.key
+.env.yaml
+.env

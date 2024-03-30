@@ -1,0 +1,95 @@
+---
+- name: create nimbus user
+  user:
+    name: "{{ nimbus_username }}"
+    shell: /bin/false
+
+- name: create nimbus data folder
+  file:
+    path: "{{ nimbus_data_dir }}"
+    state: directory
+    owner: "{{ nimbus_username }}"
+    group: "{{ nimbus_username }}"
+    mode: '0700'
+
+- name: download nimbus {{ nimbus_version }}
+  get_url:
+    url: "{{ nimbus_dl_url }}"
+    dest: "{{ nimbus_dl_dir }}/{{ nimbus_filename }}"
+    checksum: "{{ nimbus_dl_checksum }}"
+    owner: "root"
+    group: "root"
+    mode: '0644'
+  ignore_errors: "{{ ansible_check_mode }}"
+  register: nimbus_tarball_download
+
+- name: does uncompressed fullpath exist for nimbus {{ nimbus_version }}
+  stat:
+    path: "{{ nimbus_uncompressed_fullpath }}"
+  register: uncompressed_fullpath
+
+- name: create nimbus {{ nimbus_version }} folder
+  file:
+    path: "{{ nimbus_uncompressed_fullpath }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: '0755'
+  when: nimbus_tarball_download.changed or not uncompressed_fullpath.stat.exists
+
+- name: unpack nimbus {{ nimbus_version }}
+  unarchive:
+    src: "{{ nimbus_dl_dir }}/{{ nimbus_filename }}"
+    remote_src: yes
+    dest: "{{ nimbus_uncompressed_fullpath }}"
+    owner: "root"
+    group: "root"
+    extra_opts:
+    - --strip-components=1
+  when: nimbus_tarball_download.changed or not uncompressed_fullpath.stat.exists
+  register: nimbus_tarball_unpack
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Create a symbolic link to nimbus {{ nimbus_version }} folder
+  file:
+    src: "{{ nimbus_uncompressed_fullpath }}"
+    dest: "{{ nimbus_build_symlink }}"
+    owner: "root"
+    group: "root"
+    state: link
+  ###   when: nimbus_tarball_download.changed or not uncompressed_fullpath.stat.exists or nimbus_tarball_unpack.changed or not bin_syml1.stat.exists
+  ignore_errors: "{{ ansible_check_mode }}"
+  notify: restart nimbus beacon-node
+
+- name: does JWT secret file exist
+  stat:
+    path: "{{ nimbus_jwtsecret_fullpath }}"
+  register: nimbus_jwtsecret_stat
+
+- name: create JWT secret folder for Eth2
+  file:
+    path: "{{ nimbus_jwtsecret_dir }}"
+    state: directory
+    mode: 0755
+  when: (nimbus_jwtsecret_dir is defined) and (nimbus_jwtsecret_dir|length > 0)
+
+- name: generate JWT secret file if not exists
+  shell: openssl rand -hex 32 | tr -d "\n" > "{{ nimbus_jwtsecret_fullpath }}"
+  when: not nimbus_jwtsecret_stat.stat.exists
+  notify: restart nimbus beacon-node
+
+- name: install nimbus beacon-node service
+  template:
+    src: nimbus-beacon-node.service
+    dest: /etc/systemd/system/
+    mode: '0644'
+  notify:
+  - reload systemd nimbus
+  - restart nimbus beacon-node
+
+- name: enable nimbus beacon-node service
+  service:
+    name: nimbus-beacon-node
+    enabled: yes
+  register: nimbus_beaconnode_service
+

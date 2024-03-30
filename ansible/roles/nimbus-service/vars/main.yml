@@ -1,0 +1,26 @@
+---
+nimbus_version: "24.3.0"
+nimbus_version_commit: "24.3.0_dc19b082"
+nimbus_filename: "nimbus-eth2_Linux_amd64_{{ nimbus_version_commit }}.tar.gz"
+nimbus_username: "nimbus"
+nimbus_home_dir: "/home/{{ nimbus_username }}"
+nimbus_data_dir: "/var/lib/{{ nimbus_username }}"
+nimbus_dl_dir: "/root"
+nimbus_dl_url: "https://github.com/status-im/nimbus-eth2/releases/download/v{{ nimbus_version }}/{{ nimbus_filename }}"
+nimbus_dl_checksum: "sha256:a74f34940e25ed75cbfa414e5747a2b524fc54370b76feffb648edcd14eab303"   ###   "24.3.0_dc19b082"
+nimbus_uncompressed_name: "nimbus-{{ nimbus_version }}"
+nimbus_uncompressed_fullpath: "/opt/{{ nimbus_uncompressed_name }}"
+nimbus_build_symlink: "/opt/nimbus-eth2"
+nimbus_archive: False
+nimbus_chain: mainnet
+nimbus_jwtsecret_dir: "/etc/eth2"
+nimbus_jwtsecret_name: "jwtsecret"
+nimbus_jwtsecret_fullpath: "{{ nimbus_jwtsecret_dir }}/{{ nimbus_jwtsecret_name }}"
+nimbus_listen_address: "127.0.0.1"
+nimbus_external_address: ""
+# monitoring
+nimbus_metrics: False
+nimbus_metrics_address: 127.0.0.1
+nimbus_metrics_port: 8081
+nimbus_enable_monitor_indices: False
+

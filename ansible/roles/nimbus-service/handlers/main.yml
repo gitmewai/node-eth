@@ -1,0 +1,10 @@
+---
+- name: reload systemd nimbus
+  systemd:
+    daemon_reload: yes
+
+- name: restart nimbus beacon-node
+  service:
+    name: nimbus-beacon-node
+    state: restarted
+

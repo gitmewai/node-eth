@@ -1,0 +1,22 @@
+---
+nethermind_version: "1.25.4"
+nethermind_version_commit: 1.25.4-20b10b35
+nethermind_filename: "nethermind-{{ nethermind_version_commit }}-linux-x64.zip"
+nethermind_username: nethermind
+nethermind_home_dir: "/home/{{ nethermind_username }}"
+nethermind_build_dir: "{{ nethermind_home_dir }}/build"
+nethermind_data_dir: "{{ nethermind_home_dir }}/data"
+nethermind_dl_dir: "{{ nethermind_home_dir }}"
+nethermind_dl_url: "https://nethdev.blob.core.windows.net/builds/{{ nethermind_filename }}"
+nethermind_dl_checksum: sha256:b843bff5bc7199561aec3e3237caf111a0be6fed6ba386bb879e7a4cee2c6d36   ###   1.25.4-20b10b35
+nethermind_uncompressed_name: "nethermind-{{ nethermind_version }}"
+nethermind_uncompressed_fullpath: "{{ nethermind_home_dir }}/{{ nethermind_uncompressed_name }}"
+nethermind_archive: False
+nethermind_chain: mainnet
+nethermind_rpc: False
+nethermind_listen_address: 127.0.0.1
+nethermind_jwtsecret_dir: "/etc/eth2"
+nethermind_jwtsecret_name: "jwtsecret"
+nethermind_jwtsecret_fullpath: "{{ nethermind_jwtsecret_dir }}/{{ nethermind_jwtsecret_name }}"
+nethermind_metrics: False
+nethermind_metrics_address: 127.0.0.1

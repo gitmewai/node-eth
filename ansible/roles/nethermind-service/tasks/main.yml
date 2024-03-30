@@ -1,0 +1,111 @@
+---
+- name: create nethermind user
+  user:
+    name: "{{ nethermind_username }}"
+    shell: /bin/bash
+
+- name: add ulimits config file
+  template:
+    src: nethermind.conf
+    dest: "/etc/security/limits.d/nethermind.conf"
+    mode: '0644'
+  register: nethermind_ulimits_update
+  notify: restart nethermind
+
+- name: create nethermind data folder
+  file:
+    path: "{{ nethermind_data_dir }}"
+    state: directory
+    owner: "{{ nethermind_username }}"
+    group: "{{ nethermind_username }}"
+    mode: '0700'
+
+- name: download nethermind {{ nethermind_version }}
+  get_url:
+    url: "{{ nethermind_dl_url }}"
+    dest: "{{ nethermind_dl_dir }}/{{ nethermind_filename }}"
+    checksum: "{{ nethermind_dl_checksum }}"
+    owner: "{{ nethermind_username }}"
+    group: "{{ nethermind_username }}"
+    mode: '0644'
+  register: nethermind_zip_download
+
+- name: does uncompressed fullpath exist for nethermind {{ nethermind_version }}
+  stat:
+    path: "{{ nethermind_uncompressed_fullpath }}"
+  register: uncompressed_fullpath
+
+- name: create nethermind {{ nethermind_version }} folder
+  file:
+    path: "{{ nethermind_uncompressed_fullpath }}"
+    state: directory
+    owner: "{{ nethermind_username }}"
+    group: "{{ nethermind_username }}"
+    mode: '0755'
+  when: nethermind_zip_download.changed or not uncompressed_fullpath.stat.exists
+
+- name: unpack nethermind {{ nethermind_version }}
+  unarchive:
+    src: "{{ nethermind_dl_dir }}/{{ nethermind_filename }}"
+    remote_src: yes
+    dest: "{{ nethermind_uncompressed_fullpath }}"
+    owner: "{{ nethermind_username }}"
+    group: "{{ nethermind_username }}"
+  when: nethermind_zip_download.changed or not uncompressed_fullpath.stat.exists
+  register: nethermind_zip_unpack
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Create a symbolic link to nethermind {{ nethermind_version }} folder
+  file:
+    src: "{{ nethermind_uncompressed_fullpath }}"
+    dest: "{{ nethermind_build_dir }}"
+    owner: "{{ nethermind_username }}"
+    group: "{{ nethermind_username }}"
+    state: link
+  ###   when: nethermind_zip_download.changed or not uncompressed_fullpath.stat.exists or nethermind_zip_unpack.changed or not bin_syml1.stat.exists
+  ignore_errors: "{{ ansible_check_mode }}"
+  notify: restart nethermind
+
+- name: does JWT secret file exist
+  stat:
+    path: "{{ nethermind_jwtsecret_fullpath }}"
+  register: nethermind_jwtsecret_stat
+
+- name: create JWT secret folder for Eth2
+  file:
+    path: "{{ nethermind_jwtsecret_dir }}"
+    state: directory
+    mode: '0755'
+  when: (nethermind_jwtsecret_dir is defined) and (nethermind_jwtsecret_dir|length > 0)
+
+- name: generate JWT secret file if not exists
+  shell: openssl rand -hex 32 | tr -d "\n" > "{{ nethermind_jwtsecret_fullpath }}"
+  when: not nethermind_jwtsecret_stat.stat.exists
+  notify: restart nethermind
+
+- name: install .env config file
+  template:
+    src: .env
+    dest: "{{ nethermind_home_dir }}"
+    owner: "{{ nethermind_username }}"
+    group: "{{ nethermind_username }}"
+    mode: '0600'
+  register: nethermind_env_install
+  notify: restart nethermind
+
+- name: install nethermind service
+  template:
+    src: nethermind.service
+    dest: /etc/systemd/system/
+    mode: '0644'
+  notify:
+  - reload systemd nethermind
+  - restart nethermind
+
+- name: enable nethermind service
+  service:
+    name: nethermind
+    enabled: yes
+  register: nethermind_service
+  when: not (nethermind_zip_download.changed or nethermind_zip_unpack.changed)    ### or bin_syml1.stat.exists == false)
+

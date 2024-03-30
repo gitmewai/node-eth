@@ -1,0 +1,13 @@
+all:
+  vars:
+    ansible_ssh_common_args: -oUserKnownHostsFile='~/.ssh/known_hosts_node-eth-testnet'
+    cidr_vpc: "192.168.227.0/24"
+  hosts:
+    node-eth-holesky-nethermind-01:
+      ansible_host: 18.188.88.1
+      internal_ip: 192.168.227.186
+      external_ip: 18.188.88.1
+    node-eth-holesky-nethermind-02:
+      ansible_host: 18.188.88.2
+      internal_ip: 192.168.227.192
+      external_ip: 18.188.88.2

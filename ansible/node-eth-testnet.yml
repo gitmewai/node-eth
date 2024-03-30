@@ -1,0 +1,76 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+
+  tasks:
+  - name: determine public IP address
+    uri:
+      url: http://ifconfig.me/ip
+      return_content: yes
+    register: public_ip
+    tags: [ 'always' ]
+
+  - name: install dependencies
+    apt:
+      name: [ 'libsnappy-dev', 'ufw', 'zip' ]
+      state: present
+      update_cache: yes
+      cache_valid_time: 3600
+    tags: [ 'always' ]
+
+  - name: allow incoming ports 22 (sshd) from anywhere
+    ufw:
+      rule: allow
+      direction: in
+      src: "0.0.0.0/0"
+      port: "22"
+      proto: tcp
+    tags: [ 'firewall' ]
+
+#################################################
+## Ethereum - Holesky
+#################################################
+
+- hosts: node-eth-holesky-nethermind-01,node-eth-holesky-nethermind-02 
+  become: true
+  become_user: root
+
+  roles:
+  - { role: nethermind-service,
+      nethermind_archive: false,
+      nethermind_chain: holesky,
+      nethermind_rpc: true,
+      nethermind_listen_address: "{{ ansible_default_ipv4.address }}",
+      tags: [ 'nethermind' ] }
+  - { role: nimbus-service,
+      nimbus_archive: false,
+      nimbus_chain: holesky,
+      nimbus_listen_address: "{{ ansible_default_ipv4.address }}",
+      nimbus_external_address: "{{ public_ip.content | default('') }}",
+      nimbus_enable_monitor_indices: True,
+      tags: [ 'nimbus' ] }
+
+  tasks:
+  - name: allow incoming p2p ports from anywhere
+    ufw:
+      rule: allow
+      direction: in
+      src: 0.0.0.0/0
+      port: "{{ item }}"
+      proto: any
+    with_items:
+      - '30303'   ###   Nethermind eth1 p2p
+      - '9000'    ###   Nimbus eth2 beacon node p2p
+    tags: [ 'firewall' ]
+  - name: allow incoming ports within VPC
+    ufw:
+      rule: allow
+      direction: in
+      src: "{{ cidr_vpc }}"
+      port: "{{ item }}"
+      proto: tcp
+    with_items:
+      - '8545'    ###   rpc+ws
+    tags: [ 'firewall' ]
+

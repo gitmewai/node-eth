@@ -1,0 +1,27 @@
+#jinja2: trim_blocks:False
+# {{ ansible_managed }}
+# https://github.com/NethermindEth/nethermind/blob/master/scripts/nethermind.service
+# SPDX-FileCopyrightText: 2022 Demerzel Solutions Limited
+# SPDX-License-Identifier: LGPL-3.0-only
+
+[Unit]
+Description=Nethermind Node
+Documentation=https://docs.nethermind.io
+After=network.target
+
+[Service]
+User={{ nethermind_username }}
+Group={{ nethermind_username }}
+EnvironmentFile={{ nethermind_home_dir }}/.env
+WorkingDirectory={{ nethermind_home_dir }}
+ExecStart={{ nethermind_build_dir }}/nethermind -c {{ nethermind_chain }}{% if nethermind_archive %}_archive{% endif %} -dd {{ nethermind_data_dir }}
+Restart=on-failure
+LimitNOFILE=1000000
+RestartSec=300s
+PrivateTmp=true
+# prevents systemd from killing during a database upgrade
+TimeoutSec=infinity
+
+[Install]
+WantedBy=default.target
+

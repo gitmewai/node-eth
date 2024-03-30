@@ -1,0 +1,10 @@
+---
+- name: reload systemd nethermind
+  systemd:
+    daemon_reload: yes
+
+- name: restart nethermind
+  service:
+    name: nethermind
+    state: restarted
+
