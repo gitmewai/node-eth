@@ -30,6 +30,7 @@ ansible-playbook -i hosts/node-eth-testnet node-eth-testnet.yml --diff --limit '
 ```
 nimbus_version
 nimbus_version_commit
+nimbus_dl_checksum
 ```
 #### Apply Code Changes (and best to review code change beforehand)
 ```
