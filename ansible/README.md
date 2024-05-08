@@ -19,6 +19,7 @@ ansible-playbook -i hosts/node-eth-testnet node-eth-testnet.yml --diff --limit '
 ```
 nethermind_version
 nethermind_version_commit
+nethermind_dl_checksum
 ```
 #### Apply Code Changes (and best to review code change beforehand)
 ```
